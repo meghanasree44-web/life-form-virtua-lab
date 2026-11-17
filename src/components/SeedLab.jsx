@@ -1,0 +1,15 @@
+import React from 'react'
+import {PLANTS} from '../lib/model'
+import {ZSlider} from './Experiment'
+import Experiment from './Experiment'
+import {GermLab} from './Labs'
+const ST=['Seed selection','Seed preparation','Sowing','Germination','Seedling development']
+export default function Seeds({S,ctl,seed,setSeed}){const p=PLANTS[S.plant]
+ return(<section><h2 className="serif">Seed Selection and Treatment Laboratory</h2><p className="lead">Healthy seeds, correct soaking, proper depth and temperature decide how well a crop starts.</p>
+ <Experiment key={S.plant} id="seed" tag="EXPERIMENT · SEED TO SEEDLING" title={`Virtual Germination of ${p.name}`} intro={`${p.name} seed: ${p.seed}. Germinates in about ${p.germ} days at ${p.t[0]}–${p.t[1]} °C, sown ${p.depth} cm deep, spaced about ${p.sp} cm.`}
+ steps={['Seed selection: choose the plant and keep plump, uniform, undamaged seeds.','Seed preparation: soak the seed for the recommended time and apply treatment.','Sowing: place seeds at the correct depth in moist medium.','Germination: keep temperature and moisture steady until the root appears.','Seedling development: shoot and first true leaves form; begin the simulation.']}
+ ro={k=>[{l:'STAGE',v:k===0?'1/5':Math.min(k,5)+'/5',u:'',n:ST[Math.min(k,4)]},{l:'ELAPSED',v:Math.round(p.germ*Math.min(k,5)/5),u:' d',n:'of ~'+p.germ+' d'},{l:'SOAK',v:seed.soak,u:' h',n:seed.treated?'treated':'not treated'}]}
+ app={k=><svg viewBox="0 0 300 150" style={{width:'100%'}}><rect x="0" y="70" width="300" height="80" fill="#78350f"/>{k===0&&[0,1,2,3].map(i=><ellipse key={i} cx={90+i*40} cy="60" rx="9" ry="5" fill="#d6b87a"/>)}{k>=1&&<ellipse cx="150" cy="60" rx={k===1?16:10} ry={k===1?10:6} fill="#d6b87a"/>}{k>=2&&<ellipse cx="150" cy={70+p.depth*8} rx="9" ry="6" fill="#d6b87a"/>}{k>=3&&<line x1="150" y1={76+p.depth*8} x2="150" y2="125" stroke="#fff" strokeWidth="3"/>}{k>=4&&<line x1="150" y1={70+p.depth*8} x2="150" y2="40" stroke="#22c55e" strokeWidth="4"/>}{k>=5&&<><ellipse cx="136" cy="45" rx="12" ry="5" fill="#22c55e"/><ellipse cx="164" cy="42" rx="12" ry="5" fill="#22c55e"/></>}</svg>}
+ ctl={<><label className="sl"><span>Seed</span><select value={S.plant} onChange={e=>ctl.plant(e.target.value)}>{Object.entries(PLANTS).map(([k,v])=><option key={k} value={k}>{v.name}</option>)}</select></label><ZSlider l="Soaking time" v={seed.soak} set={v=>setSeed({...seed,soak:v})} max={24} u=" h" z={['0','2–6 h Good','6–12 h','> 12 Risky']}/><button className="btn" onClick={()=>setSeed({...seed,treated:true})}>Apply seed treatment</button></>}
+ diag={k=><><h3>{ST[Math.min(k,4)]}</h3><p>{['Pick plump, uniform, clean seeds. Floating, cracked or mouldy seeds are likely non-viable.','Soaking softens the coat and speeds water uptake; over-soaking drowns the seed.','Sow at about '+p.depth+' cm: too deep wastes energy, too shallow dries out.','Water swells the seed, the coat splits and the root (radicle) emerges first.','The shoot reaches light and first leaves begin photosynthesis.'][Math.min(k,4)]}</p></>}/>
+ <GermLab key={S.plant} S={S}/></section>)}

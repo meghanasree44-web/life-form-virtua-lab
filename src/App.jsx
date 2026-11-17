@@ -1,0 +1,31 @@
+import React,{useState,useEffect,useRef} from 'react'
+import {BookOpen,MapPin,CloudSun,Layers,Sprout,Flower2,LayoutGrid,FlaskConical,Library,ClipboardCheck,FileText,RotateCcw,HelpCircle,Leaf} from 'lucide-react'
+import {PLANTS,STAGES,stageIndex,step,r1,balanceIrr} from './lib/model'
+import {Intro,SiteAssessment} from './components/Labs'
+import Weather from './components/Meteo'
+import Soil from './components/Media'
+import Seeds from './components/SeedLab'
+import {XCtx} from './components/Experiment'
+import RooftopSimulation from './components/RooftopSimulation'
+import {Planner,CaseStudies} from './components/Tools'
+import Coach from './components/Coach'
+import {Activities,Assessment,Report} from './components/Learn'
+const S0={medium:'mix',hum:60,wind:5,support:false,plant:'tomato',sunH:8,intensity:90,temp:25,moisture:30,spacing:45,method:'drip',irrAmt:2.9,irrFreq:1,N:70,P:70,K:70,speed:1,running:false,t:0,prog:0,height:0,waterUsed:0,history:[],beds:2,bedArea:2}
+const D={site:{shade:20,area:40,sun:7,slope:5,load:220,wind:'low',drain:'good',waterAv:'good',access:'easy'},rain:{mm:25,hrs:3,area:40},wx:{T:30,tw:22,rh:60,dir:45,ws:5},med:{soil:0,coco:40,compost:30,vermi:10,perlite:20,sand:0},seed:{soak:6,treated:false},lay:{w:6,l:5,cells:Array(30).fill(0)},quiz:{}}
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem('rgl-'+k))??d}catch{return d}}
+const MODS=[['Introduction',BookOpen],['Site Assessment',MapPin],['Meteorological Lab',CloudSun],['Growing Media',Layers],['Seed Lab',Sprout],['Main Simulation',Flower2],['Garden Planner',LayoutGrid],['Practicals',FlaskConical],['Case Studies',Library],['Quiz',ClipboardCheck],['Report',FileText]]
+export default function App(){
+ const [m,setM]=useState(()=>{try{return Math.min(10,+new URLSearchParams(location.search).get('m')||0)}catch{return 0}}),[S,setS]=useState(S0),[site,setSite]=useState(D.site),[rain,setRain]=useState(D.rain),[wx,setWx]=useState(D.wx),[med,setMed]=useState(D.med),[seed,setSeed]=useState(D.seed),[lay,setLay]=useState(D.lay)
+ const [xd,setXd]=useState(()=>load('xd',[])),[done,setDone]=useState(()=>load('done',[])),[quiz,setQuiz]=useState(()=>load('quiz',{})),[snaps,setSnaps]=useState([]),last=useRef(-1)
+ useEffect(()=>{localStorage.setItem('rgl-done',JSON.stringify(done));localStorage.setItem('rgl-quiz',JSON.stringify(quiz));localStorage.setItem('rgl-xd',JSON.stringify(xd))},[done,quiz,xd])
+ useEffect(()=>{if(!S.running)return;const i=setInterval(()=>setS(s=>s.running?step(s,.1*s.speed):s),100);return()=>clearInterval(i)},[S.running])
+ useEffect(()=>{if(S.t===0&&!S.running)return;const p=PLANTS[S.plant],k=stageIndex(S.prog,p);if(last.current!==k){last.current=k;setSnaps(a=>[...a,{stage:STAGES(p)[k],t:r1(S.t),h:r1(S.height),m:r1(S.moisture),T:S.temp,sun:S.sunH}])}},[S.prog,S.running])
+ const up=o=>setS(s=>({...s,...o})),clear=()=>{last.current=-1;setSnaps([])}
+ const ctl={start:()=>{if(S.prog>=100||S.t===0)clear();if(S.prog>=100)setS(s=>({...s,t:0,prog:0,height:0,waterUsed:0,history:[],running:true}));else{if(S.t===0)setSnaps([{stage:'Initial rooftop setup & seed planting',t:0,h:0,m:r1(S.moisture),T:S.temp,sun:S.sunH}]);up({running:true})}},pause:()=>up({running:false}),
+  restart:()=>{clear();setS(s=>({...s,running:false,t:0,prog:0,height:0,waterUsed:0,history:[]}))},reset:()=>{clear();setS(S0)},plant:p=>{clear();const q=PLANTS[p],n={...S0,plant:p,spacing:q.sp,temp:Math.round((q.t[0]+q.t[1])/2),moisture:Math.round((q.m[0]+q.m[1])/2)};n.irrAmt=balanceIrr(n);setS(n)}}
+ const markX=id=>setXd(d=>d.includes(id)?d:[...d,id]),got=done.length+xd.length,tot=22,pct=Math.round(got/tot*100),progress=Math.round((done.length/10*50)+(quiz.score!=null?quiz.score/quiz.total*25:0)+(S.prog/100*25))
+ const G={S,site,rain,med,seed,lay,done,quiz,snaps}
+ const pages=[<Intro/>,<SiteAssessment site={site} setSite={setSite}/>,<Weather rain={rain} setRain={setRain} wx={wx} setWx={setWx}/>,<Soil med={med} setMed={setMed} S={S}/>,<Seeds S={S} ctl={ctl} seed={seed} setSeed={setSeed}/>,<RooftopSimulation S={S} up={up} ctl={ctl} snaps={snaps}/>,<Planner lay={lay} setLay={setLay}/>,<Activities G={G} done={done} mark={n=>setDone(d=>d.includes(n)?d:[...d,n])}/>,<CaseStudies/>,<Assessment quiz={quiz} setQuiz={setQuiz}/>,<Report G={G}/>]
+ return(<XCtx.Provider value={{done:xd,mark:markX}}><><div className="strip"><span className="badge">VOCATIONAL SKILL &amp; PRACTICAL FILE</span><span>Urban Agriculture · Rooftop Gardening Practical Studio</span><span className="sp"/><span>● Simulated Practical Studio</span></div><header><Leaf color="#0b3b36"/><div><small className="mono">ROOFTOP LAB PRACTICAL STUDIO / EXPERIMENTAL ROOFTOP GARDENING</small><h1>Rooftop Gardening Simulation Laboratory</h1></div><span className="sp"/><div style={{minWidth:170}}><small className="mono">LAB MASTERY: <b>{pct}% ({got}/{tot})</b></small><div className="bar"><i style={{width:pct+'%'}}/></div></div><button className="btn gr" onClick={()=>setM(11)}>Practical Sheet</button><button className="btn" onClick={()=>{setM(11);setTimeout(()=>window.print(),300)}}>Print Report</button><button className="btn gr" onClick={()=>{if(confirm('Reset simulation and saved progress?')){ctl.reset();setDone([]);setQuiz({});setXd([])}}}><RotateCcw size={14}/> Reset</button><button className="btn gr" onClick={()=>alert('Pick a module on the left. In each experiment press Advance Procedure Step, change the sliders and read the diagnosis. Values are educational estimates.')}><HelpCircle size={14}/> Help</button></header>
+ <div className="layout"><nav aria-label="Modules">{MODS.map(([n,I],i)=><button key={n} className={m===i?'on':''} onClick={()=>setM(i)}><I size={16}/>{String(i+1).padStart(2,'0')} {n}{n==='Practicals'&&<span className="done">{done.length}/10</span>}{(n==='Site Assessment'&&done.includes(1)||n==='Main Simulation'&&done.includes(8)||n==='Quiz'&&quiz.score!=null)&&<span className="done">✓</span>}</button>)}</nav>
+ <main><Coach m={m} G={G}/><div className="note"><b>MODULE {String(m+1).padStart(2,'0')}</b> — {MODS[m][0]}</div>{m===0&&<div className="card"><h3>Welcome, student</h3><p>Rooftop gardens turn unused roofs into food-producing, cooling, water-saving green space. Work through the modules, run the experiments, and finish the report.</p></div>}{pages[m]}</main></div></></XCtx.Provider>)}
